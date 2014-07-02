@@ -3,6 +3,7 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using Dapper;
+using Dommel.Linq.Utils;
 
 namespace Dommel.Linq.ConsoleTest
 {
@@ -12,19 +13,20 @@ namespace Dommel.Linq.ConsoleTest
         {
             using (var con = new SqlConnection("Data Source=sql2012; Initial Catalog=DapperTest;Integrated Security=True"))
             {
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 5; i++)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Console.WriteLine("Iteration: {0}", i);
 
-                    var q = con.Table<Product>();
-                    q = q.Where(p => p.Name != "bla");
-                    
-                    var y = q.ToList();
+                    using (new Profiler("Query execute"))
+                    {
+                        var q = from p in con.Table<Product>()
+                                where p.Name != "bla"
+                                select p;
+                        var y = q.ToList();
+                        //var y = con.Query<Product>("select * from Products where Name != 'bla'").ToList();
+                    }
 
-                    //var y = con.Query<Product>("select * from Products where Name != 'bla'").ToList();
-
-                    sw.Stop();
-                    Console.WriteLine("Retrieved {0} objects in {1}ms", y.Count, sw.Elapsed.TotalMilliseconds);
+                    Console.WriteLine("");
                 }
 
                 Console.ReadKey();

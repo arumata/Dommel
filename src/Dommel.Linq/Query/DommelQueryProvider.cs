@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -40,19 +41,33 @@ namespace Dommel.Linq.Query
 
         public override object Execute(Expression expression)
         {
-            string query = Translate(expression);
-
-            var type = TypeHelper.GetElementType(expression.Type);
-
-            MethodInfo generic;
-            if (!_typeMethodInfo.TryGetValue(type, out generic))
+            string query;
+            using (new Profiler("Translate"))
             {
-                generic = _queryMethod.MakeGenericMethod(new[] { type });
+                query = Translate(expression);
             }
 
-            var result = generic.Invoke(this, new object[] { _connection, query, null, null, true, null, null });
+            Type type;
+            using (new Profiler("GetElementType"))
+            {
+                type = TypeHelper.GetElementType(expression.Type);
+            }
 
-            return result;
+            MethodInfo generic;
+            using (new Profiler("MakeGenericMethod"))
+            {
+                if (!_typeMethodInfo.TryGetValue(type, out generic))
+                {
+                    generic = _queryMethod.MakeGenericMethod(new[] { type });
+                    _typeMethodInfo[type] = generic;
+                }
+            }
+
+            using (new Profiler("Invoke"))
+            {
+                var result = generic.Invoke(this, new object[] { _connection, query, null, null, true, null, null });
+                return result;
+            }
         }
 
         public override string GetQueryText(Expression expression)

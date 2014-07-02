@@ -52,6 +52,7 @@
     <Compile Include="Query\Query.cs" />
     <Compile Include="Query\QueryProvider.cs" />
     <Compile Include="Query\SqlQueryTranslator.cs" />
+    <Compile Include="Utils\Profiler.cs" />
     <Compile Include="Utils\TypeHelper.cs" />
   </ItemGroup>
   <ItemGroup>
