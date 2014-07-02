@@ -40,7 +40,7 @@ namespace Dommel
             {
                 string tableName = GetTableName(type);
                 var keyProperty = GetKeyProperty(type);
-                string keyColumnName = GetColumnName(type, keyProperty);
+                string keyColumnName = GetColumnName(keyProperty);
 
                 sql = string.Format("select * from {0} where {1} = @Id", tableName, keyColumnName);
                 _getQueryCache[type] = sql;
@@ -95,7 +95,7 @@ namespace Dommel
                 var keyProperty = GetKeyProperty(type);
                 var typeProperties = GetTypeProperties(type).Where(p => p != keyProperty).ToList();
 
-                string[] columnNames = typeProperties.Select(p => GetColumnName(type, p)).ToArray();
+                string[] columnNames = typeProperties.Select(GetColumnName).ToArray();
                 string[] paramNams = typeProperties.Select(p => "@" + p.Name).ToArray();
 
                 // todo: scope_identity() is not supported in sql ce.
@@ -130,7 +130,7 @@ namespace Dommel
                 var keyProperty = GetKeyProperty(type);
                 var typeProperties = GetTypeProperties(type).Where(p => p != keyProperty).ToList();
 
-                string[] columnNames = typeProperties.Select(p => string.Format("{0} = @{1}", GetColumnName(type, p), p.Name)).ToArray();
+                string[] columnNames = typeProperties.Select(p => string.Format("{0} = @{1}", GetColumnName(p), p.Name)).ToArray();
 
                 sql = string.Format("update {0} set {1} where {2} = @{3}",
                     tableName,
@@ -161,7 +161,7 @@ namespace Dommel
             {
                 string tableName = GetTableName(type);
                 var keyProperty = GetKeyProperty(type);
-                string keyColumnName = GetColumnName(type, keyProperty);
+                string keyColumnName = GetColumnName(keyProperty);
 
                 sql = string.Format("delete from {0} where {1} = @{2}", tableName, keyColumnName, keyProperty.Name);
             }
@@ -192,7 +192,12 @@ namespace Dommel
             return properties;
         }
 
-        private static string GetTableName(Type type)
+        /// <summary>
+        /// Gets the name of the table in the database for the specified type using an <see cref="ITableNameResolver"/> implementation.
+        /// </summary>
+        /// <param name="type">The type of the entity.</param>
+        /// <returns>The name of the table in the database for the specified type.</returns>
+        public static string GetTableName(Type type)
         {
             string name;
             if (!_typeTableNameCache.TryGetValue(type, out name))
@@ -203,9 +208,14 @@ namespace Dommel
             return name;
         }
 
-        private static string GetColumnName(Type type, PropertyInfo propertyInfo)
+        /// <summary>
+        /// Gets the column name in the datbase for the specified property uing an <see cref="IColumnNameResolver"/> implementation.
+        /// </summary>
+        /// <param name="propertyInfo">The property of the entity.</param>
+        /// <returns>The name of the column in the database for the specified property.</returns>
+        public static string GetColumnName(PropertyInfo propertyInfo)
         {
-            string key = string.Format("{0}.{1}", type.FullName, propertyInfo.Name);
+            string key = string.Format("{0}.{1}", propertyInfo.DeclaringType.FullName, propertyInfo.Name);
 
             string columnName;
             if (!_columnNameCache.TryGetValue(key, out columnName))
@@ -218,7 +228,7 @@ namespace Dommel
 
         #region Key property resolving
         private static IKeyPropertyResolver _keyPropertyResolver = new DefaultKeyPropertyResolver();
-
+        
         /// <summary>
         /// Sets the <see cref="DommelMapper.IKeyPropertyResolver"/> implementation for resolving key properties of entities.
         /// </summary>

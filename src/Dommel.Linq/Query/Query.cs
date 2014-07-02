@@ -8,11 +8,19 @@ using Dommel.Linq.Utils;
 
 namespace Dommel.Linq.Query
 {
-    public class Query<T> : IOrderedQueryable<T>
+    /// <summary>
+    /// Represents a query for entity <typeparamref name="TEntity"/>.
+    /// </summary>
+    /// <typeparam name="TEntity">The type of the entity.</typeparam>
+    public class Query<TEntity> : IOrderedQueryable<TEntity>
     {
         private readonly IQueryProvider _queryProvider;
         private readonly Expression _expression;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dommel.Linq.Query.Query"/> class using the specified <see cref="System.Linq.IQueryProvider"/>.
+        /// </summary>
+        /// <param name="queryProvider">An implementation of the <see cref="System.Linq.IQueryProvider"/> used for query translation.</param>
         public Query(IQueryProvider queryProvider)
         {
             Check.NotNull(queryProvider, "queryProvider");
@@ -21,12 +29,17 @@ namespace Dommel.Linq.Query
             _expression = Expression.Constant(this);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dommel.Linq.Query.Query"/> class using the specified <see cref="System.Linq.IQueryProvider"/>.
+        /// </summary>
+        /// <param name="queryProvider">An implementation of the <see cref="System.Linq.IQueryProvider"/> used for query translation.</param>
+        /// <param name="expression">The expression representing the query.</param>
         public Query(IQueryProvider queryProvider, Expression expression)
         {
             Check.NotNull(queryProvider, "queryProvider");
             Check.NotNull(expression, "expression");
 
-            if (!typeof(IQueryable<T>).IsAssignableFrom(expression.Type))
+            if (!typeof(IQueryable<TEntity>).IsAssignableFrom(expression.Type))
             {
                 throw new ArgumentException("Expression must be of type IQueryable<T>.", "expression");
             }
@@ -35,9 +48,9 @@ namespace Dommel.Linq.Query
             _expression = expression;
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public IEnumerator<TEntity> GetEnumerator()
         {
-            return ((IEnumerable<T>)_queryProvider.Execute(_expression)).GetEnumerator();
+            return ((IEnumerable<TEntity>)_queryProvider.Execute(_expression)).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -57,7 +70,7 @@ namespace Dommel.Linq.Query
         {
             get
             {
-                return typeof(T);
+                return typeof(TEntity);
             }
         }
 

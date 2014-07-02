@@ -7,6 +7,9 @@ using Dommel.Linq.Utils;
 
 namespace Dommel.Linq.Query
 {
+    /// <summary>
+    /// Serves as the base class for all query providers for the <see cref="Dommel.Linq.Query.Query"/> class.
+    /// </summary>
     public abstract class QueryProvider : IQueryProvider
     {
         public IQueryable CreateQuery(Expression expression)
@@ -34,6 +37,11 @@ namespace Dommel.Linq.Query
 
         public abstract object Execute(Expression expression);
 
+        /// <summary>
+        /// Gets the translated text for the specified query.
+        /// </summary>
+        /// <param name="expression">The expression to translate.</param>
+        /// <returns>The translated text for the query.</returns>
         public abstract string GetQueryText(Expression expression);
     }
 }
