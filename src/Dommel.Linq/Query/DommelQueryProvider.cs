@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -24,7 +23,10 @@ namespace Dommel.Linq.Query
         {
             // Find the Query<T>() method in Dapper.
             _queryMethod = typeof (SqlMapper).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                             .First(m => m.Name == "Query" && m.IsGenericMethodDefinition && m.GetGenericArguments().Count() == 1 && m.GetParameters().Count() > 4);
+                                             .First(m => m.Name == "Query" &&
+                                                         m.IsGenericMethodDefinition &&
+                                                         m.GetGenericArguments().Count() == 1 &&
+                                                         m.GetParameters().Count() > 4);
         }
 
         /// <summary>
@@ -47,24 +49,18 @@ namespace Dommel.Linq.Query
                 query = Translate(expression);
             }
 
-            Type type;
-            using (new Profiler("GetElementType"))
-            {
-                type = TypeHelper.GetElementType(expression.Type);
-            }
+            Type type = TypeHelper.GetElementType(expression.Type);
 
             MethodInfo generic;
-            using (new Profiler("MakeGenericMethod"))
+            if (!_typeMethodInfo.TryGetValue(type, out generic))
             {
-                if (!_typeMethodInfo.TryGetValue(type, out generic))
-                {
-                    generic = _queryMethod.MakeGenericMethod(new[] { type });
-                    _typeMethodInfo[type] = generic;
-                }
+                generic = _queryMethod.MakeGenericMethod(new[] { type });
+                _typeMethodInfo[type] = generic;
             }
 
-            using (new Profiler("Invoke"))
+            using (new Profiler("Invoke Query<T> method"))
             {
+                // Invoke the generic Query<T> method where T is element type of the expression.
                 var result = generic.Invoke(this, new object[] { _connection, query, null, null, true, null, null });
                 return result;
             }

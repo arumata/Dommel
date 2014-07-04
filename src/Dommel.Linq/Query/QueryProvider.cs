@@ -14,20 +14,26 @@ namespace Dommel.Linq.Query
     {
         public IQueryable CreateQuery(Expression expression)
         {
-            Type elementType = TypeHelper.GetElementType(expression.Type);
-            try
+            using (new Profiler("IQueryable.CreateQuery"))
             {
-                return (IQueryable)Activator.CreateInstance(typeof(Query<>).MakeGenericType(elementType), new object[] { this, expression });
-            }
-            catch (TargetInvocationException ex)
-            {
-                throw ex.InnerException;
+                Type elementType = TypeHelper.GetElementType(expression.Type);
+                try
+                {
+                    return (IQueryable)Activator.CreateInstance(typeof (Query<>).MakeGenericType(elementType), new object[] { this, expression });
+                }
+                catch (TargetInvocationException ex)
+                {
+                    throw ex.InnerException;
+                }
             }
         }
 
         public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
         {
-            return new Query<TElement>(this, expression);
+            using (new Profiler("IQueryable.CreateQuery<T>"))
+            {
+                return new Query<TElement>(this, expression);
+            }
         }
 
         public TResult Execute<TResult>(Expression expression)

@@ -14,6 +14,15 @@ namespace Dommel.Linq.Utils
             _sw = Stopwatch.StartNew();
         }
 
+        public static void Profile(string reference, Action action)
+        {
+            var sw = Stopwatch.StartNew();
+            action();
+            sw.Stop();
+
+            Console.WriteLine("{0:HH:mm:ss.ffff}: {1} - elapsed: {2}ms", DateTime.Now, reference, sw.Elapsed.TotalMilliseconds);
+        }
+
         public void Dispose()
         {
             _sw.Stop();
