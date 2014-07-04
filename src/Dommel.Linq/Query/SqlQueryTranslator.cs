@@ -33,11 +33,37 @@ namespace Dommel.Linq.Query
                 return node;
             }
 
+            switch (node.Method.Name)
+            {
+                case "Take":
+                    if (ParseTakeExpression(node))
+                    {
+                        var next = node.Arguments[0];
+                        return Visit(next);
+                    }
+                    break;
+            }
+
             // todo: parse skip, take, orderby etc.
 
             throw new NotSupportedException(string.Format("The method '{0}' is not supported.", node.Method.Name));
         }
 
+        private int? _top;
+        private bool ParseTakeExpression(MethodCallExpression expression)
+        {
+            var amountExpression = (ConstantExpression)expression.Arguments[1];
+
+            int amount;
+            if (int.TryParse(amountExpression.Value.ToString(), out amount))
+            {
+                _top = amount;
+                return true;
+            }
+
+            return false;
+        }
+        
         protected override Expression VisitUnary(UnaryExpression node)
         {
             switch (node.NodeType)
@@ -103,8 +129,17 @@ namespace Dommel.Linq.Query
                 // todo: is the select statement here correct?
                 // todo: support projection.
                 string tableName = DommelMapper.GetTableName(queryable.ElementType);
-                builder.Append("select * from ")
-                       .Append(tableName)
+
+                if (_top.HasValue)
+                {
+                    builder.AppendFormat("select top {0} * from ", _top);
+                }
+                else
+                {
+                    builder.Append("select * from ");
+                }
+
+                builder.Append(tableName)
                        .Append(" where ");
             }
             else if (node.Value == null)
