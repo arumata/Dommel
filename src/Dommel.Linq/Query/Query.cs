@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-
 using Dommel.Linq.Utils;
 
 namespace Dommel.Linq.Query
@@ -39,7 +38,7 @@ namespace Dommel.Linq.Query
             Check.NotNull(queryProvider, "queryProvider");
             Check.NotNull(expression, "expression");
 
-            if (!typeof(IQueryable<TEntity>).IsAssignableFrom(expression.Type))
+            if (!typeof (IQueryable<TEntity>).IsAssignableFrom(expression.Type))
             {
                 throw new ArgumentException("Expression must be of type IQueryable<T>.", "expression");
             }
@@ -50,7 +49,7 @@ namespace Dommel.Linq.Query
 
         public IEnumerator<TEntity> GetEnumerator()
         {
-            return ((IEnumerable<TEntity>)_queryProvider.Execute(_expression)).GetEnumerator();
+            return ((IEnumerable<object>)_queryProvider.Execute(_expression)).Select(x => (TEntity)x).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -70,7 +69,7 @@ namespace Dommel.Linq.Query
         {
             get
             {
-                return typeof(TEntity);
+                return typeof (TEntity);
             }
         }
 
