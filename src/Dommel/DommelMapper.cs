@@ -772,7 +772,7 @@ namespace Dommel
         /// <param name="entity">The entity to be inserted.</param>
         /// <param name="transaction">Optional transaction for the command.</param>
         /// <returns>The id of the inserted entity.</returns>
-        public static int Insert<TEntity>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null) where TEntity : class
+        public static TPrimaryKey Insert<TEntity, TPrimaryKey>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null) where TEntity : class
         {
             var type = typeof (TEntity);
 
@@ -793,7 +793,7 @@ namespace Dommel
                 _insertQueryCache[type] = sql;
             }
 
-            var result = connection.Query<int>(sql, entity, transaction);
+            var result = connection.Query<TPrimaryKey>(sql, entity, transaction);
             return result.Single();
         }
 
@@ -1378,7 +1378,7 @@ namespace Dommel
         {
             public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty)
             {
-                string sql = string.Format("insert into {0} ({1}) values ({2}) select last_insert_rowid() id",
+                string sql = string.Format("insert into {0} ({1}) values ({2})",
                     tableName,
                     string.Join(", ", columnNames),
                     string.Join(", ", paramNames));
