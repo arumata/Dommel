@@ -771,8 +771,9 @@ namespace Dommel
         /// <param name="connection">The connection to the database. This can either be open or closed.</param>
         /// <param name="entity">The entity to be inserted.</param>
         /// <param name="transaction">Optional transaction for the command.</param>
+        /// <param name="includeKey">Optional flag for including key column in query</param>
         /// <returns>The id of the inserted entity.</returns>
-        public static TPrimaryKey Insert<TEntity, TPrimaryKey>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null) where TEntity : class
+        public static TPrimaryKey Insert<TEntity, TPrimaryKey>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null, bool includeKey = false) where TEntity : class
         {
             var type = typeof (TEntity);
 
@@ -782,6 +783,10 @@ namespace Dommel
                 string tableName = Resolvers.Table(type);
                 var keyProperty = Resolvers.KeyProperty(type);
                 var typeProperties = Resolvers.Properties(type).Where(p => p != keyProperty).ToList();
+                if (includeKey)
+                {
+                    typeProperties.Add(keyProperty);
+                }
 
                 string[] columnNames = typeProperties.Select(Resolvers.Column).ToArray();
                 string[] paramNames = typeProperties.Select(p => "@" + p.Name).ToArray();
