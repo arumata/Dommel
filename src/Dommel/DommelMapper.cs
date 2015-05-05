@@ -1385,7 +1385,7 @@ namespace Dommel
             {
                 string sql = string.Format("insert into {0} ({1}) values ({2})",
                     tableName,
-                    string.Join(", ", columnNames),
+                    string.Join(", ", Quote(columnNames)),
                     string.Join(", ", paramNames));
 
                 if (keyProperty != null)
@@ -1401,6 +1401,11 @@ namespace Dommel
                 }
 
                 return sql;
+            }
+
+            private IEnumerable<string> Quote(IEnumerable<string> columnNames)
+            {
+                return columnNames.Select(str => '"' + str + '"');
             }
         }
         #endregion
