@@ -689,7 +689,7 @@ namespace Dommel
             /// <returns>The result of the processing.</returns>
             protected virtual string MemberToColumn(MemberExpression expression)
             {
-                return Resolvers.Column((PropertyInfo)expression.Member);
+                return Resolvers.Table(expression.Expression.Type) + "." + Resolvers.Column((PropertyInfo)expression.Member);
             }
 
             /// <summary>
