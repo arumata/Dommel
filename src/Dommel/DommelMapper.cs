@@ -768,6 +768,7 @@ namespace Dommel
         /// Inserts the specified entity into the database and returns the id.
         /// </summary>
         /// <typeparam name="TEntity">The type of the entity.</typeparam>
+        /// <typeparam name="TPrimaryKey">The type of primary key.</typeparam>
         /// <param name="connection">The connection to the database. This can either be open or closed.</param>
         /// <param name="entity">The entity to be inserted.</param>
         /// <param name="transaction">Optional transaction for the command.</param>
@@ -1080,6 +1081,11 @@ namespace Dommel
         /// </summary>
         public class DefaultPropertyResolver : PropertyResolverBase
         {
+            /// <summary>
+            /// Resolves the properties to be mapped for the specified type.
+            /// </summary>
+            /// <param name="type">The type to resolve the properties to be mapped for.</param>
+            /// <returns>A collection of <see cref="PropertyInfo"/>'s of the <paramref name="type"/>.</returns>
             public override IEnumerable<PropertyInfo> ResolveProperties(Type type)
             {
                 return FilterComplexTypes(type.GetProperties());
