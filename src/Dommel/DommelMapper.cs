@@ -1393,6 +1393,10 @@ namespace Dommel
                     tableName,
                     string.Join(", ", Quote(columnNames)),
                     string.Join(", ", paramNames));
+                if (columnNames.Length == 0)
+                {
+                    sql = string.Format("INSERT INTO {0} DEFAULT VALUES", tableName);
+                }
 
                 if (keyProperty != null)
                 {
