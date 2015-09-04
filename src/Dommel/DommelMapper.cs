@@ -27,6 +27,7 @@ namespace Dommel
         private static readonly IDictionary<Type, string> _getQueryCache = new Dictionary<Type, string>();
         private static readonly IDictionary<Type, string> _getAllQueryCache = new Dictionary<Type, string>();
         private static readonly IDictionary<Type, string> _insertQueryCache = new Dictionary<Type, string>();
+        private static readonly IDictionary<Type, string> _insertAndReturnQueryCache = new Dictionary<Type, string>();
         private static readonly IDictionary<Type, string> _updateQueryCache = new Dictionary<Type, string>();
         private static readonly IDictionary<Type, string> _deleteQueryCache = new Dictionary<Type, string>();
 
@@ -794,12 +795,51 @@ namespace Dommel
 
                 var builder = GetBuilder(connection);
 
-                sql = builder.BuildInsert(tableName, columnNames, paramNames, keyProperty);
+                sql = builder.BuildInsert(tableName, columnNames, paramNames, keyProperty, false);
 
                 _insertQueryCache[type] = sql;
             }
 
             var result = connection.Query<TPrimaryKey>(sql, entity, transaction);
+            return result.Single();
+        }
+
+        /// <summary>
+        /// Inserts the specified entity into the database and returns the id.
+        /// </summary>
+        /// <typeparam name="TEntity">The type of the entity.</typeparam>
+        /// <typeparam name="TPrimaryKey">The type of primary key.</typeparam>
+        /// <param name="connection">The connection to the database. This can either be open or closed.</param>
+        /// <param name="entity">The entity to be inserted.</param>
+        /// <param name="transaction">Optional transaction for the command.</param>
+        /// <param name="includeKey">Optional flag for including key column in query</param>
+        /// <returns>The id of the inserted entity.</returns>
+        public static TEntity InsertAndReturn<TEntity, TPrimaryKey>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null, bool includeKey = false) where TEntity : class
+        {
+            var type = typeof (TEntity);
+
+            string sql;
+            if (!_insertAndReturnQueryCache.TryGetValue(type, out sql))
+            {
+                string tableName = Resolvers.Table(type);
+                var keyProperty = Resolvers.KeyProperty(type);
+                var typeProperties = Resolvers.Properties(type).Where(p => p != keyProperty).ToList();
+                if (includeKey)
+                {
+                    typeProperties.Add(keyProperty);
+                }
+
+                string[] columnNames = typeProperties.Select(Resolvers.Column).ToArray();
+                string[] paramNames = typeProperties.Select(p => "@" + p.Name).ToArray();
+
+                var builder = GetBuilder(connection);
+
+                sql = builder.BuildInsert(tableName, columnNames, paramNames, keyProperty, true);
+
+                _insertAndReturnQueryCache[type] = sql;
+            }
+
+            var result = connection.Query<TEntity>(sql, entity, transaction);
             return result.Single();
         }
 
@@ -1338,13 +1378,15 @@ namespace Dommel
             /// <param name="paramNames">The names of the parameters in the database command.</param>
             /// <param name="keyProperty">The key property. This can be used to query a specific column for the new id. This is optional.</param>
             /// <returns>An insert query including a query to fetch the new id.</returns>
-            string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty);
+            string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty, bool returnAll);
         }
 
         private sealed class SqlServerSqlBuilder : ISqlBuilder
         {
-            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty)
+            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty, bool returnAll)
             {
+                if (returnAll)
+                    throw new NotImplementedException();
                 return string.Format("set nocount on insert into {0} ({1}) values ({2}) select cast(scope_identity() as int)",
                     tableName,
                     string.Join(", ", columnNames),
@@ -1354,8 +1396,10 @@ namespace Dommel
 
         private sealed class SqlServerCeSqlBuilder : ISqlBuilder
         {
-            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty)
+            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty, bool returnAll)
             {
+                if (returnAll)
+                    throw new NotImplementedException();
                 return string.Format("insert into {0} ({1}) values ({2}) select cast(@@IDENTITY as int)",
                     tableName,
                     string.Join(", ", columnNames),
@@ -1365,8 +1409,10 @@ namespace Dommel
 
         private sealed class SqliteSqlBuilder : ISqlBuilder
         {
-            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty)
+            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty, bool returnAll)
             {
+                if (returnAll)
+                    throw new NotImplementedException();
                 return string.Format("insert into {0} ({1}) values ({2}); select last_insert_rowid() id",
                     tableName,
                     string.Join(", ", columnNames),
@@ -1376,8 +1422,10 @@ namespace Dommel
 
         private sealed class MySqlSqlBuilder : ISqlBuilder
         {
-            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty)
+            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty, bool returnAll)
             {
+                if (returnAll)
+                    throw new NotImplementedException();
                 return string.Format("insert into {0} ({1}) values ({2}) select LAST_INSERT_ID() id",
                     tableName,
                     string.Join(", ", columnNames),
@@ -1387,7 +1435,7 @@ namespace Dommel
 
         private sealed class PostgresSqlBuilder : ISqlBuilder
         {
-            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty)
+            public string BuildInsert(string tableName, string[] columnNames, string[] paramNames, PropertyInfo keyProperty, bool returnAll)
             {
                 string sql = string.Format("insert into {0} ({1}) values ({2})",
                     tableName,
@@ -1398,16 +1446,23 @@ namespace Dommel
                     sql = string.Format("INSERT INTO {0} DEFAULT VALUES", tableName);
                 }
 
-                if (keyProperty != null)
+                if (returnAll)
                 {
-                    string keyColumnName = Resolvers.Column(keyProperty);
-
-                    sql += " RETURNING " + keyColumnName;
+                    sql += " RETURNING *";
                 }
                 else
                 {
-                    // todo: what behavior is desired here?
-                    throw new Exception("A key property is required for the PostgresSqlBuilder.");
+                    if (keyProperty != null)
+                    {
+                        string keyColumnName = Resolvers.Column(keyProperty);
+
+                        sql += " RETURNING " + keyColumnName;
+                    }
+                    else
+                    {
+                        // todo: what behavior is desired here?
+                        throw new Exception("A key property is required for the PostgresSqlBuilder.");
+                    }
                 }
 
                 return sql;
