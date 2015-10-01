@@ -775,7 +775,7 @@ namespace Dommel
         /// <param name="transaction">Optional transaction for the command.</param>
         /// <param name="includeKey">Optional flag for including key column in query</param>
         /// <returns>The id of the inserted entity.</returns>
-        public static TPrimaryKey Insert<TEntity, TPrimaryKey>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null, bool includeKey = false) where TEntity : class
+        public static TEntity Insert<TEntity, TPrimaryKey>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null, bool includeKey = false) where TEntity : class
         {
             var type = typeof (TEntity);
 
@@ -795,12 +795,12 @@ namespace Dommel
 
                 var builder = GetBuilder(connection);
 
-                sql = builder.BuildInsert(tableName, columnNames, paramNames, keyProperty, false);
+                sql = builder.BuildInsert(tableName, columnNames, paramNames, keyProperty, true);
 
                 _insertQueryCache[type] = sql;
             }
 
-            var result = connection.Query<TPrimaryKey>(sql, entity, transaction);
+            var result = connection.Query<TEntity>(sql, entity, transaction);
             return result.Single();
         }
 
