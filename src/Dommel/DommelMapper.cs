@@ -852,7 +852,7 @@ namespace Dommel
         /// <param name="entity">The entity in the database.</param>
         /// <param name="transaction">Optional transaction for the command.</param>
         /// <returns>A value indicating whether the update operation succeeded.</returns>
-        public static bool Update<TEntity>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null)
+        public static TEntity Update<TEntity>(this IDbConnection connection, TEntity entity, IDbTransaction transaction = null)
         {
             var type = typeof (TEntity);
 
@@ -865,7 +865,7 @@ namespace Dommel
 
                 string[] columnNames = typeProperties.Select(p => string.Format("{0} = @{1}", Resolvers.Column(p), p.Name)).ToArray();
 
-                sql = string.Format("update {0} set {1} where {2} = @{3}",
+                sql = string.Format("update {0} set {1} where {2} = @{3} RETURNING *",
                     tableName,
                     string.Join(", ", columnNames),
                     Resolvers.Column(keyProperty),
@@ -874,7 +874,7 @@ namespace Dommel
                 _updateQueryCache[type] = sql;
             }
 
-            return connection.Execute(sql, entity, transaction) > 0;
+            return connection.Query<TEntity>(sql, entity, transaction).Single();
         }
 
         /// <summary>
