@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Dommel.A</id>
+    <version>1.4.0</version>
+    <projectUrl>https://github.com/arumata/Dommel.git</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <authors>Henk Mollema,Arumata</authors>
+    <description>Dapper.FluentMap</description>
+  </metadata>
+  <files>
+    <file src="bin\Release\Dommel.dll" target="lib\net40" />
+    <file src="bin\Release\Dommel.pdb" target="lib\net40" />
+    <file src="bin\Release\Dommel.XML" target="lib\net40" />
+  </files>
+</package>
